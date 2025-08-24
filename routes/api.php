@@ -6,6 +6,7 @@ use App\Http\Middleware\checkUserId;
 use App\Http\Controllers\API\UserController;
 use App\Http\Controllers\API\CategoryController;
 use App\Http\Controllers\API\ProductController;
+use App\Http\Controllers\API\OrderController;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -43,4 +44,32 @@ Route::middleware(['checkUserId', 'admin'])->group(function () {
     Route::post('/products', [ProductController::class, 'store']);
     Route::put('/products/{id}', [ProductController::class, 'update']);
     Route::delete('/products/{id}', [ProductController::class, 'destroy']);
+});
+
+
+// Public routes for menu display (no authentication required)
+Route::get('/menu', [OrderController::class, 'showMenu']);
+Route::get('/menu/products', [OrderController::class, 'getProducts']);
+Route::get('/menu/categories', [OrderController::class, 'getCategories']);
+
+// Customer ordering routes (requires authentication)
+Route::middleware(['checkUserId'])->group(function () {
+    Route::post('/orders', [OrderController::class, 'createOrder']);
+    Route::put('/orders/{id}/items', [OrderController::class, 'updateOrderItems']);
+    Route::post('/orders/{id}/submit', [OrderController::class, 'submitOrder']);
+    Route::get('/orders/{id}/track', [OrderController::class, 'trackOrder']);
+    Route::post('/orders/{id}/cancel', [OrderController::class, 'cancelOrder']);
+    Route::get('/my-orders', [OrderController::class, 'getCustomerOrders']);
+});
+
+// Admin routes for order management
+Route::middleware(['checkUserId', 'admin'])->group(function () {
+    Route::get('/orders/history', [OrderController::class, 'getOrderHistory']);
+    Route::put('/orders/{id}/status', [OrderController::class, 'updateOrderStatus']);
+});
+
+// Cashier routes for order management
+Route::middleware(['checkUserId', 'cashier'])->group(function () {
+    Route::post('/orders/cashier', [OrderController::class, 'placeOrderForCashier']);
+    Route::put('/orders/{id}/status', [OrderController::class, 'updateOrderStatus']);
 });

@@ -14,6 +14,7 @@ class OrderStatusChange extends Model
     protected $fillable = [
         'order_id',
         'status',
+        'created_at'
     ];
 
     public function order()
