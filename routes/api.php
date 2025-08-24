@@ -7,6 +7,9 @@ use App\Http\Controllers\API\UserController;
 use App\Http\Controllers\API\CategoryController;
 use App\Http\Controllers\API\ProductController;
 use App\Http\Controllers\API\OrderController;
+use App\Http\Controllers\API\EnquiryController;
+
+//Authentication routes for all users
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -20,7 +23,7 @@ Route::middleware('checkUserId')->group(function () {
     return "Middleware works";
 })->middleware('checkUserId');
 });
-
+//Users CURD routes (admin)
 Route::middleware(['checkUserId', 'admin'])->group(function () {
     Route::get('/users', [UserController::class, 'index']);
     Route::get('/users/{id}', [UserController::class, 'show']);
@@ -30,14 +33,14 @@ Route::middleware(['checkUserId', 'admin'])->group(function () {
 });
 
 
-
+//Categories CRUD routes (admin)
 Route::middleware(['checkUserId', 'admin'])->group(function () {
     Route::get('/categories', [CategoryController::class, 'index']);
     Route::post('/categories', [CategoryController::class, 'store']);
     Route::put('/categories/{id}', [CategoryController::class, 'update']);
     Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
 });
-
+//products CRUD routes (admin)
 Route::middleware(['checkUserId', 'admin'])->group(function () {
     Route::get('/products', [ProductController::class, 'index']);
     Route::get('/products/{id}', [ProductController::class, 'show']);
@@ -72,4 +75,21 @@ Route::middleware(['checkUserId', 'admin'])->group(function () {
 Route::middleware(['checkUserId', 'cashier'])->group(function () {
     Route::post('/orders/cashier', [OrderController::class, 'placeOrderForCashier']);
     Route::put('/orders/{id}/status', [OrderController::class, 'updateOrderStatus']);
+});
+
+
+
+
+
+// (Cashier) enquiries routes
+Route::middleware(['checkUserId', 'cashier'])->group(function () {
+    Route::get('/cashier/enquiries/show', [EnquiryController::class, 'showForCashier']);
+    Route::put('/cashier/enquiries/receive/{id}', [EnquiryController::class, 'receive']);
+});
+
+// (Admin) enquiries routes
+Route::middleware(['checkUserId', 'admin'])->group(function () {
+    Route::get('/admin/enquiries/list', [EnquiryController::class, 'listForAdmin']);
+    Route::put('/admin/enquiries/update/{id}', [EnquiryController::class, 'update']);
+    Route::delete('/admin/enquiries/delete/{id}', [EnquiryController::class, 'delete']);
 });

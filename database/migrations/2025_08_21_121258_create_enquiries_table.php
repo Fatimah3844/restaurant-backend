@@ -15,6 +15,7 @@ return new class extends Migration
     $table->id();
     $table->text('content');
     $table->foreignId('customer_id')->constrained('users')->onDelete('cascade');
+    $table->boolean('received')->default(false); // جديد
     $table->timestamps();
 });
 

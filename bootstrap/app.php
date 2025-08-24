@@ -15,7 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
         // هنا بنسجل middleware جديد
         $middleware->alias([
             'checkUserId' => \App\Http\Middleware\CheckUserId::class,
-            'admin' =>\App\Http\Middleware\AdminMiddleware::class
+            'admin' =>\App\Http\Middleware\AdminMiddleware::class,
+            'cashier'=>\App\Http\Middleware\CashierMiddleware::class
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
