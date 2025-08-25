@@ -21,7 +21,7 @@ class OrderController extends Controller
     public function showMenu(): JsonResponse
     {
         try {
-            $categories = Category::with(['products' => function($query) {
+            $categories = Category::with(['products' => function ($query) {
                 $query->select('id', 'name', 'description', 'image_url', 'price', 'category_id');
             }])->get();
 
@@ -67,7 +67,7 @@ class OrderController extends Controller
     public function getCategories(): JsonResponse
     {
         try {
-            $categories = Category::with('products')->get();
+            $categories = Category::get();
 
             return response()->json([
                 'success' => true,
@@ -147,7 +147,6 @@ class OrderController extends Controller
                 'message' => 'Order created successfully',
                 'data' => $order
             ], 201);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -193,6 +192,10 @@ class OrderController extends Controller
             ], 400);
         }
 
+        if ($order->customer_id !== $request->get('customer_id')) {
+            return response()->json(['success' => false, 'message' => 'Not authorized'], 403);
+        }
+
         DB::beginTransaction();
 
         try {
@@ -219,6 +222,11 @@ class OrderController extends Controller
 
             // Update order total price
             $order->update(['total_price' => $totalPrice]);
+            $order->statusChanges()->create([
+                'order_id' => $order->id,
+                'status' => 'pending',
+                'created_at' => now(),
+            ]);
 
             DB::commit();
 
@@ -230,7 +238,6 @@ class OrderController extends Controller
                 'message' => 'Order items updated successfully',
                 'data' => $order
             ], 200);
-
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -240,10 +247,10 @@ class OrderController extends Controller
             ], 500);
         }
     }
-// **
-//      * Submit order (change status from pending to confirmed)
-//      */
-    public function submitOrder($orderId): JsonResponse
+    // **
+    //      * Submit order (change status from pending to confirmed)
+    //      */
+    public function submitOrder(Request $request, $orderId): JsonResponse
     {
         $order = Order::find($orderId);
         if (!$order) {
@@ -259,14 +266,18 @@ class OrderController extends Controller
                 'message' => 'Order cannot be submitted. Current status: ' . $order->status
             ], 400);
         }
+        if ($order->customer_id !== $request->get('customer_id')) {
+            return response()->json(['success' => false, 'message' => 'Not authorized'], 403);
+        }
 
         try {
             $order->update(['status' => 'confirmed']);
 
             // Create status change record
             $order->statusChanges()->create([
+                'order_id' => $order->id,
                 'status' => 'confirmed',
-                'updated_at' => now(),
+                'created_at' => now(),
             ]);
 
             $order->load(['customer', 'table', 'items.product']);
@@ -276,11 +287,93 @@ class OrderController extends Controller
                 'message' => 'Order submitted successfully',
                 'data' => $order
             ], 200);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to submit order',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    // Track order status
+    public function trackOrder(Request $request,$orderId): JsonResponse
+    {
+        try {
+            $order = Order::with(['customer', 'table', 'items.product', 'statusChanges'])
+                ->find($orderId);
+
+            if (!$order) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Order not found'
+                ], 404);
+            }
+            if ($order->customer_id !== $request->get('customer_id')) {
+                return response()->json(['success' => false, 'message' => 'Not authorized'], 403);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Order tracking information retrieved successfully',
+                'data' => [
+                    'order' => $order,
+                    'status_history' => $order->statusChanges()->orderBy('created_at', 'desc')->get()
+                ]
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve order tracking information',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // cancel order
+    public function cancelOrder(Request $request, $orderId): JsonResponse
+
+    {
+
+
+        try {
+            $order = Order::find($orderId);
+            if (!$order) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Order not found'
+                ], 404);
+            }
+            if ($order->customer_id !== $request->get('customer_id')) {
+                return response()->json(['success' => false, 'message' => 'Not authorized'], 403);
+            }
+            // Only allow cancellation for pending or confirmed orders
+            if (!in_array($order->status, ['pending', 'confirmed'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Order cannot be cancelled. Current status: ' . $order->status
+                ], 400);
+            }
+
+            $order->update(['status' => 'cancelled']);
+
+            // Create status change record
+            $order->statusChanges()->create([
+                'order_id' => $order->id,
+                'status' => 'cancelled',
+                'created_at' => now(),
+            ]);
+
+            $order->load(['customer', 'table', 'items.product']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Order cancelled successfully',
+                'data' => $order
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to cancel order',
                 'error' => $e->getMessage()
             ], 500);
         }

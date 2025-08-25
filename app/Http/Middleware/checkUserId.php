@@ -12,7 +12,7 @@ class checkUserId
      */
     public function handle(Request $request, Closure $next)
 {
-    $userId = $request->input('user_id'); 
+    $userId = $request->input('customer_id'); 
     if (!$userId) {
         return response()->json(['message' => 'User ID is required.'], 401);
     }

@@ -50,6 +50,8 @@ Route::middleware(['checkUserId', 'admin'])->group(function () {
 });
 
 
+///////////////////////////////////////////////////////////////
+
 // Public routes for menu display (no authentication required)
 Route::get('/menu', [OrderController::class, 'showMenu']);
 Route::get('/menu/products', [OrderController::class, 'getProducts']);
