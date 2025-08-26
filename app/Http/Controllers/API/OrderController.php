@@ -378,4 +378,49 @@ class OrderController extends Controller
             ], 500);
         }
     }
+//see customer's orders
+    public function getCustomerOrders(Request $request): JsonResponse
+    {
+        try {
+            $customerId = $request->get('customer_id');
+            $orders = Order::with(['items.product'])
+                ->where('customer_id', $customerId)
+                ->where('status', '!=', 'cancelled')
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Customer orders retrieved successfully',
+                'data' => $orders
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve customer orders',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    public function getCashierOrders(Request $request): JsonResponse
+    {
+        try {
+            $orders = Order::with(['items.product'])
+                ->where('status', '!=', 'cancelled')
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Customer orders retrieved successfully',
+                'data' => $orders
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve customer orders',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

@@ -59,12 +59,12 @@ Route::get('/menu/categories', [OrderController::class, 'getCategories']);
 
 // Customer ordering routes (requires authentication)
 Route::middleware(['checkUserId'])->group(function () {
-    Route::post('/orders', [OrderController::class, 'createOrder']);
-    Route::put('/orders/{id}/items', [OrderController::class, 'updateOrderItems']);
-    Route::post('/orders/{id}/submit', [OrderController::class, 'submitOrder']);
-    Route::get('/orders/{id}/track', [OrderController::class, 'trackOrder']);
-    Route::post('/orders/{id}/cancel', [OrderController::class, 'cancelOrder']);
-    Route::get('/my-orders', [OrderController::class, 'getCustomerOrders']);
+    Route::post('/orders', [OrderController::class, 'createOrder']); //done
+    Route::put('/orders/{id}/items', [OrderController::class, 'updateOrderItems']);//done
+    Route::post('/orders/{id}/submit', [OrderController::class, 'submitOrder']);//done
+    Route::get('/orders/{id}/track', [OrderController::class, 'trackOrder']);//done
+    Route::post('/orders/{id}/cancel', [OrderController::class, 'cancelOrder']);//done
+    Route::get('/my-orders', [OrderController::class, 'getCustomerOrders']);//done
 });
 
 // Admin routes for order management
@@ -75,7 +75,7 @@ Route::middleware(['checkUserId', 'admin'])->group(function () {
 
 // Cashier routes for order management
 Route::middleware(['checkUserId', 'cashier'])->group(function () {
-    Route::post('/orders/cashier', [OrderController::class, 'placeOrderForCashier']);
+    Route::get('/cashier_orders', [OrderController::class, 'getCashierOrders']);//current 
     Route::put('/orders/{id}/status', [OrderController::class, 'updateOrderStatus']);
 });
 

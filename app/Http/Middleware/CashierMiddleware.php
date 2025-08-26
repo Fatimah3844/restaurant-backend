@@ -9,7 +9,7 @@ class CashierMiddleware
 {
     public function handle(Request $request, Closure $next)
     {
-        $user = $request->user;
+        $user =$request->input('chasier_id'); 
 
         if (!$user || ($user->role !== 'cashier' && $user->role !== 'admin')) {
             return response()->json(['message' => 'Unauthorized. Cashiers or Admins only.'], 403);
