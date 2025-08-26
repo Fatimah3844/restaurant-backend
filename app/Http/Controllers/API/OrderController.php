@@ -7,6 +7,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -296,7 +297,7 @@ class OrderController extends Controller
         }
     }
     // Track order status
-    public function trackOrder(Request $request,$orderId): JsonResponse
+    public function trackOrder(Request $request, $orderId): JsonResponse
     {
         try {
             $order = Order::with(['customer', 'table', 'items.product', 'statusChanges'])
@@ -346,8 +347,8 @@ class OrderController extends Controller
             if ($order->customer_id !== $request->get('customer_id')) {
                 return response()->json(['success' => false, 'message' => 'Not authorized'], 403);
             }
-            // Only allow cancellation for pending or confirmed orders
-            if (!in_array($order->status, ['pending', 'confirmed'])) {
+            // Only allow cancellation for pending
+            if (!in_array($order->status, ['pending'])) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Order cannot be cancelled. Current status: ' . $order->status
@@ -378,7 +379,7 @@ class OrderController extends Controller
             ], 500);
         }
     }
-//see customer's orders
+    //see customer's orders
     public function getCustomerOrders(Request $request): JsonResponse
     {
         try {
@@ -419,6 +420,113 @@ class OrderController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to retrieve customer orders',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    //update order status (admin and cashier)
+    public function updateOrderStatus(Request $request, $orderId): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'status' => 'required|in:pending,confirmed,In Preperation,Ready,Delivered,cancelled',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $order = Order::find($orderId);
+        if (!$order) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Order not found'
+            ], 404);
+        }
+
+        // Prevent changing status to pending
+        if ($request->status === 'pending') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot change order status back to pending.'
+            ], 400);
+        }
+
+        // Prevent changing status to cancelled (customers should do that)
+        if ($request->status === 'cancelled') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot change order status to cancelled. Customers must cancel their own orders.'
+            ], 400);
+        }
+
+        // Define valid status transitions
+        $validTransitions = [
+            'pending' => ['confirmed', 'cancelled', 'In Preperation'],
+            'confirmed' => ['In Preperation', 'cancelled'],
+            'In Preperation' => ['Ready', 'cancelled'],
+            'Ready' => ['Delivered', 'cancelled'],
+            'Delivered' => [],
+            'cancelled' => [],
+        ];
+
+        if (!in_array($request->status, $validTransitions[$order->status])) {
+            return response()->json([
+                'success' => false,
+                'message' => "Invalid status transition from {$order->status} to {$request->status}."
+            ], 400);
+        }
+
+        try {
+            $order->update(['status' => $request->status]);
+
+            // Create status change record
+            $order->statusChanges()->create([
+                'order_id' => $order->id,
+                'status' => $request->status,
+                'updated_at' => now(),
+            ]);
+            Notification::create([
+                'customer_id' => $order->customer_id, // foreign key in notifications table
+                'notification' => "Your order #{$order->id} status has been updated to {$request->status}.",
+            ]);
+
+            $order->load(['customer', 'table', 'items.product']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'order status updated successfully',
+                'data' => $order
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve customer orders',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    public function getNotifications(Request $request): JsonResponse
+    {
+        try {
+            $user_id = $request->get('cutomer_id'); // from your checkUserId middleware
+
+            $notifications = Notification::where('customer_id', $user_id)
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Notifications retrieved successfully',
+                'data' => $notifications
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve notifications',
                 'error' => $e->getMessage()
             ], 500);
         }

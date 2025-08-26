@@ -9,6 +9,7 @@ use App\Http\Controllers\API\OrderController;
 use App\Http\Controllers\API\EnquiryController;
 use App\Http\Controllers\API\SettingController;
 use App\Http\Controllers\API\TableController;
+use App\Http\Controllers\API\CustomerController;
 
 //Authentication routes for all users
 
@@ -20,9 +21,9 @@ Route::middleware('checkUserId')->group(function () {
     Route::get('/profile', [AuthController::class, 'profile']);
     Route::put('/profile', [AuthController::class, 'updateProfile']);
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
-    Route::get('/test', function() {
-    return "Middleware works";
-})->middleware('checkUserId');
+    Route::get('/test', function () {
+        return "Middleware works";
+    })->middleware('checkUserId');
 });
 //Users CURD routes (admin)
 Route::middleware(['checkUserId', 'admin'])->group(function () {
@@ -70,12 +71,14 @@ Route::get('/menu/categories', [OrderController::class, 'getCategories']);
 // Customer ordering routes (requires authentication)
 Route::middleware(['checkUserId'])->group(function () {
     Route::post('/orders', [OrderController::class, 'createOrder']); //done
-    Route::put('/orders/{id}/items', [OrderController::class, 'updateOrderItems']);//done
-    Route::post('/orders/{id}/submit', [OrderController::class, 'submitOrder']);//done
-    Route::get('/orders/{id}/track', [OrderController::class, 'trackOrder']);//done
-    Route::post('/orders/{id}/cancel', [OrderController::class, 'cancelOrder']);//done
-    Route::get('/my-orders', [OrderController::class, 'getCustomerOrders']);//done
+    Route::put('/orders/{id}/items', [OrderController::class, 'updateOrderItems']); //done
+    Route::post('/orders/{id}/submit', [OrderController::class, 'submitOrder']); //done
+    Route::get('/orders/{id}/track', [OrderController::class, 'trackOrder']); //done
+    Route::post('/orders/{id}/cancel', [OrderController::class, 'cancelOrder']); //done
+    Route::get('/my-orders', [OrderController::class, 'getCustomerOrders']); //done
+    Route::get('/notifications', [CustomerController::class, 'getNotifications']);
 });
+
 
 // Admin routes for order management
 Route::middleware(['checkUserId', 'admin'])->group(function () {
@@ -85,8 +88,8 @@ Route::middleware(['checkUserId', 'admin'])->group(function () {
 
 // Cashier routes for order management
 Route::middleware(['checkUserId', 'cashier'])->group(function () {
-    Route::get('/cashier_orders', [OrderController::class, 'getCashierOrders']);//current 
-    Route::put('/orders/{id}/status', [OrderController::class, 'updateOrderStatus']);
+    Route::get('/cashier_orders', [OrderController::class, 'getCashierOrders']); //done 
+    Route::put('/orders/{id}/status', [OrderController::class, 'updateOrderStatus']); //done
 });
 
 
