@@ -2,12 +2,13 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\AuthController;
-use App\Http\Middleware\checkUserId;
 use App\Http\Controllers\API\UserController;
 use App\Http\Controllers\API\CategoryController;
 use App\Http\Controllers\API\ProductController;
 use App\Http\Controllers\API\OrderController;
 use App\Http\Controllers\API\EnquiryController;
+use App\Http\Controllers\API\SettingController;
+use App\Http\Controllers\API\TableController;
 
 //Authentication routes for all users
 
@@ -25,6 +26,7 @@ Route::middleware('checkUserId')->group(function () {
 });
 //Users CURD routes (admin)
 Route::middleware(['checkUserId', 'admin'])->group(function () {
+    Route::put('/admin/settings/update', [SettingController::class, 'update']);
     Route::get('/users', [UserController::class, 'index']);
     Route::get('/users/{id}', [UserController::class, 'show']);
     Route::post('/users', [UserController::class, 'store']);
@@ -47,6 +49,14 @@ Route::middleware(['checkUserId', 'admin'])->group(function () {
     Route::post('/products', [ProductController::class, 'store']);
     Route::put('/products/{id}', [ProductController::class, 'update']);
     Route::delete('/products/{id}', [ProductController::class, 'destroy']);
+});
+
+//table CRUD routes (admin)
+Route::middleware(['checkUserId', 'admin'])->group(function () {
+    Route::post('/admin/tables', [TableController::class, 'store']);
+    Route::get('/admin/tables', [TableController::class, 'index']);
+    Route::put('/admin/tables/{id}', [TableController::class, 'update']);
+    Route::delete('/admin/tables/{id}', [TableController::class, 'delete']);
 });
 
 
@@ -95,3 +105,13 @@ Route::middleware(['checkUserId', 'admin'])->group(function () {
     Route::put('/admin/enquiries/update/{id}', [EnquiryController::class, 'update']);
     Route::delete('/admin/enquiries/delete/{id}', [EnquiryController::class, 'delete']);
 });
+
+//public routes (all users)
+
+//show terms
+Route::get('/misc/view/terms', [SettingController::class, 'viewTerms']);
+
+//show setting of restaurant 
+Route::get('/misc/view/settings', [SettingController::class, 'viewSettings']);
+// scan table qr
+Route::get('/misc/scan/qr/{uuid}', [TableController::class, 'scanQr']);
