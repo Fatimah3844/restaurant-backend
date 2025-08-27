@@ -19,6 +19,7 @@ class Enquiry extends Model
         'content',
         'customer_id',
         'received',
+        'response',
     ];
 
     protected $attributes = [
@@ -40,5 +41,10 @@ class Enquiry extends Model
     public function setReceivedAttribute($value)
     {
         $this->attributes['received'] = $value;
+    }
+    // Setter للـ response
+    public function setResponseAttribute($value)
+    {
+        $this->attributes['response'] = $value;
     }
 }

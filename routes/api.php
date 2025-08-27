@@ -10,6 +10,7 @@ use App\Http\Controllers\API\EnquiryController;
 use App\Http\Controllers\API\SettingController;
 use App\Http\Controllers\API\TableController;
 use App\Http\Controllers\API\CustomerController;
+use App\Http\Controllers\api\ReviewController;
 
 //Authentication routes for all users
 
@@ -64,9 +65,9 @@ Route::middleware(['checkUserId', 'admin'])->group(function () {
 ///////////////////////////////////////////////////////////////
 
 // Public routes for menu display (no authentication required)
-Route::get('/menu', [OrderController::class, 'showMenu']);
-Route::get('/menu/products', [OrderController::class, 'getProducts']);
-Route::get('/menu/categories', [OrderController::class, 'getCategories']);
+Route::get('/menu', [OrderController::class, 'showMenu']); //done
+Route::get('/menu/products', [OrderController::class, 'getProducts']); //done
+Route::get('/menu/categories', [OrderController::class, 'getCategories']); //done
 
 // Customer ordering routes (requires authentication)
 Route::middleware(['checkUserId'])->group(function () {
@@ -76,17 +77,26 @@ Route::middleware(['checkUserId'])->group(function () {
     Route::get('/orders/{id}/track', [OrderController::class, 'trackOrder']); //done
     Route::post('/orders/{id}/cancel', [OrderController::class, 'cancelOrder']); //done
     Route::get('/my-orders', [OrderController::class, 'getCustomerOrders']); //done
-    Route::get('/notifications', [CustomerController::class, 'getNotifications']);
+    Route::get('/notifications', [CustomerController::class, 'getNotifications']); //done
+    Route::post('/enquiry', [EnquiryController::class, 'submitEnquiry']); //done
+});
+//customer review routes
+Route::middleware(['checkUserId'])->group(function () {
+    Route::post('/review/create', [ReviewController::class, 'rateOrder']); //done
+    Route::get('/review/read', [ReviewController::class, 'readReviews']); //done
+    Route::delete('/review/delete', [ReviewController::class, 'deleteReview']); //done
+    Route::put('/review/update', [ReviewController::class, 'updateReview']); //don
+
 });
 
-
-// Admin routes for order management
+//admin routes for review management
 Route::middleware(['checkUserId', 'admin'])->group(function () {
-    Route::get('/orders/history', [OrderController::class, 'getOrderHistory']);
-    Route::put('/orders/{id}/status', [OrderController::class, 'updateOrderStatus']);
+    Route::get('/review/read', [ReviewController::class, 'readReviews']); //done
+    Route::delete('/review/delete', [ReviewController::class, 'deleteReview']); //done
 });
 
-// Cashier routes for order management
+
+// Cashier&Admin routes for order management
 Route::middleware(['checkUserId', 'cashier'])->group(function () {
     Route::get('/cashier_orders', [OrderController::class, 'getCashierOrders']); //done 
     Route::put('/orders/{id}/status', [OrderController::class, 'updateOrderStatus']); //done
@@ -96,17 +106,18 @@ Route::middleware(['checkUserId', 'cashier'])->group(function () {
 
 
 
-// (Cashier) enquiries routes
-Route::middleware(['checkUserId', 'cashier'])->group(function () {
-    Route::get('/cashier/enquiries/show', [EnquiryController::class, 'showForCashier']);
-    Route::put('/cashier/enquiries/receive/{id}', [EnquiryController::class, 'receive']);
-});
+// // (Cashier) enquiries routes
+// Route::middleware(['checkUserId', 'cashier'])->group(function () {
+//     Route::get('/cashier/enquiries/show', [EnquiryController::class, 'showForCashier']);
+//     Route::put('/cashier/enquiries/receive/{id}', [EnquiryController::class, 'receive']);
+// });
 
 // (Admin) enquiries routes
 Route::middleware(['checkUserId', 'admin'])->group(function () {
-    Route::get('/admin/enquiries/list', [EnquiryController::class, 'listForAdmin']);
-    Route::put('/admin/enquiries/update/{id}', [EnquiryController::class, 'update']);
-    Route::delete('/admin/enquiries/delete/{id}', [EnquiryController::class, 'delete']);
+    Route::get('/enquiries/list', [EnquiryController::class, 'listForAdmin']); //done
+    Route::put('/enquiries/receive/{id}', [EnquiryController::class, 'receive']); //done
+    Route::put('/enquiries/respond/{id}', [EnquiryController::class, 'respond']); //done
+    Route::delete('/enquiries/delete/{id}', [EnquiryController::class, 'delete']); //done
 });
 
 //public routes (all users)
